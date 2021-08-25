@@ -3,33 +3,42 @@ import ReactDOM from 'react-dom';
 import './index.css';
 
 //child
-class Square extends React.Component {
-
-    //when the square is clicked, it calls the function associated with onClick (handleClick)
-    render() {
-      return (
-        <button className="square" onClick = {()=> this.props.onClick()}> 
-          {this.props.value}
-        </button>
-      );
-    }
-  }
+function Square(props) {
+  return (
+    <button className="square" onClick={props.onClick}>
+      {props.value}
+    </button>
+  );
+}
   
-  //parent 
+  //parent: sets up the board
   class Board extends React.Component {
     //initially, squares are null. board is filled 9 squares
     constructor(props) {
         super(props);
         this.state = {
             squares: Array(9).fill(null),
+            xIsNext: true,
+            //makes the first move always an "X"
         };
     }
 
-    //defining the handleClick function, used when a square is clicked. Sets the square to X.
+    //defining the handleClick function, used when a square is clicked. 
     handleClick(i) {
         const squares = this.state.squares.slice();
-        squares[i] = 'X';
-        this.setState({squares: squares});
+
+        //if calculateWinner is true, ignore the rest
+        if (calculateWinner(squares) || squares[i]) {
+          return;
+        }
+
+        //squares are initially set as "X". When the square is clicked, set the state of the square (xIsNext) to be false.
+        squares[i] = this.state.xIsNext ? 'X': 'O';
+        this.setState({
+          squares: squares,
+          xIsNext: !this.state.xIsNext,
+          //when it is not true ("X"), let the next move be false ("O")
+        });
     }
 
     //talks to the squares. "value" and "onClick" are props that get passed down to the Square. Passes down the state of the square (null or not) to the child squares.
@@ -38,7 +47,18 @@ class Square extends React.Component {
     }
   
     render() {
-      const status = 'Next player: X';
+    //displays the entire UI.
+
+      const winner = calculateWinner(this.state.squares);
+      let status;
+
+      if (winner) {
+        status = 'Winner' + winner;
+      }
+
+      else {
+        status = 'Next player:' + (this.state.xIsNext ? 'X':'O');
+      }
   
       return (
         <div>
@@ -77,6 +97,27 @@ class Square extends React.Component {
         </div>
       );
     }
+  }
+
+  function calculateWinner(squares) {
+    const lines = [
+      [0, 1, 2],
+      [3, 4, 5],
+      [6, 7, 8],
+      [0, 3, 6],
+      [1, 4, 7],
+      [2, 5, 8],
+      [0, 4, 8],
+      [2, 4, 6],
+    ];
+    for (let i = 0; i < lines.length; i++) {
+      const [a, b, c] = lines[i];
+      if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
+        return squares[a];
+      }
+    }
+    return null;
+    //returns null if there is no winner
   }
   
   // ========================================
