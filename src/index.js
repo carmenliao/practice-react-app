@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
 
-//child
+//child: is the square. Receives orders from parent (Game)
 function Square(props) {
   return (
     <button className="square" onClick={props.onClick}>
@@ -11,55 +11,15 @@ function Square(props) {
   );
 }
   
-  //parent: sets up the board
+  //child: sets up the board. Receives orders from parent (Game)
   class Board extends React.Component {
-    //initially, squares are null. board is filled 9 squares
-    constructor(props) {
-        super(props);
-        this.state = {
-            squares: Array(9).fill(null),
-            xIsNext: true,
-            //makes the first move always an "X"
-        };
-    }
-
-    //defining the handleClick function, used when a square is clicked. 
-    handleClick(i) {
-        const squares = this.state.squares.slice();
-
-        //if calculateWinner is true, ignore the rest
-        if (calculateWinner(squares) || squares[i]) {
-          return;
-        }
-
-        //squares are initially set as "X". When the square is clicked, set the state of the square (xIsNext) to be false.
-        squares[i] = this.state.xIsNext ? 'X': 'O';
-        this.setState({
-          squares: squares,
-          xIsNext: !this.state.xIsNext,
-          //when it is not true ("X"), let the next move be false ("O")
-        });
-    }
 
     //talks to the squares. "value" and "onClick" are props that get passed down to the Square. Passes down the state of the square (null or not) to the child squares.
     renderSquare(i) {
-      return <Square value = {this.state.squares[i]} onClick = {() => this.handleClick(i)}/>;
+      return <Square value = {this.props.squares[i]} onClick = {() => this.props.onClick(i)}/>;
     }
   
     render() {
-    //displays the entire UI.
-
-      const winner = calculateWinner(this.state.squares);
-      let status;
-
-      if (winner) {
-        status = 'Winner' + winner;
-      }
-
-      else {
-        status = 'Next player:' + (this.state.xIsNext ? 'X':'O');
-      }
-  
       return (
         <div>
           <div className="status">{status}</div>
@@ -83,15 +43,64 @@ function Square(props) {
     }
   }
   
+  //parent: Has full control over everything. State is used here, because it is the top-most level.
   class Game extends React.Component {
+
+    //initial set up of board - X is always the first move.
+    constructor(props) {
+      super(props);
+      this.state = {
+        history: [{
+          squares: Array(9).fill(null),
+        }],
+        xIsNext: true,
+      };
+
+    }
+
+    //defining the handleClick function, used when a square is clicked. 
+    handleClick(i) {
+      const history = this.state.history;
+      const current = history[history.length - 1];
+      const squares = current.squares.slice();
+
+      //if calculateWinner is true, ignore the rest
+      if (calculateWinner(squares) || squares[i]) {
+        return;
+      }
+
+      //squares are initially set as "X". When the square is clicked, set the state of the square (xIsNext) to be false.
+      squares[i] = this.state.xIsNext ? 'X': 'O';
+      this.setState({
+        history: history.concat([{
+          squares: squares,
+        }]),
+        xIsNext: !this.state.xIsNext,
+        //when it is not true ("X"), let the next move be false ("O")
+      });
+  }
+
     render() {
+      const history = this.state.history;
+      const current = history[history.length - 1];
+      const winner = calculateWinner(current.squares);
+      let status;
+      
+      if (winner) {
+        status = 'Winner' + winner;
+      }
+
+      else {
+        status = 'Next player:' + (this.state.xIsNext ? 'X':'O');
+      }
+
       return (
         <div className="game">
           <div className="game-board">
-            <Board />
+            <Board squares = {current.squares} onClick={(i) => this.handleClick(i)}/>
           </div>
           <div className="game-info">
-            <div>{/* status */}</div>
+            <div>{status}</div>
             <ol>{/* TODO */}</ol>
           </div>
         </div>
